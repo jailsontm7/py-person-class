@@ -1,50 +1,38 @@
+# app/main.py
+from __future__ import annotations
+
+
 class Person:
-    # 1. Atributo de classe para armazenar todas as instâncias
-    people: dict[str, "Person"] = {}
+    people: dict[str, Person] = {}
 
     def __init__(self, name: str, age: int) -> None:
         self.name: str = name
         self.age: int = age
-
-        # 2. Adiciona a nova instância ao dicionário de classe
-        self.people[name] = self
+        Person.people[name] = self
 
 
-def create_person_list(people: list[dict]) -> list["Person"]:
-    # Passo 1: Limpar o dicionário de classe para garantir isolamento
+def create_person_list(people: list[dict]) -> list[Person]:
     Person.people = {}
 
-    person_instances: list[Person] = []
-
-    # 3. Criar todas as instâncias de Person
-    for person_data in people:
-        name = person_data["name"]
-        age = person_data["age"]
-
-        # A chamada ao __init__ preenche automaticamente Person.people
-        instance = Person(name, age)
-        person_instances.append(instance)
+    person_instances: list[Person] = [
+        Person(person_data["name"], person_data["age"]) for person_data in people
+    ]
 
     for person_data in people:
-        current_person = Person.people[person_data["name"]]
+        current = Person.people[person_data["name"]]
 
-        spouse_name = None
-        if "wife" in person_data:
-            spouse_name = person_data["wife"]
-            spouse_key = "wife"
-        elif "husband" in person_data:
-            spouse_name = person_data["husband"]
-            spouse_key = "husband"
-        else:
-            # Não há relacionamento de cônjuge a ser definido
-            continue
+        for spouse_key in ("wife", "husband"):
+            if spouse_key not in person_data:
+                continue
 
-        # 4. Adicionar o atributo wife/husband se o valor não for None
-        if spouse_name is not None:
-            # Encontra a instância do cônjuge no dicionário de classe
-            spouse_instance = Person.people[spouse_name]
+            spouse_name = person_data[spouse_key]
+            if spouse_name is None:
+                continue
 
-            # Adiciona o atributo dinamicamente (wife ou husband)
-            setattr(current_person, spouse_key, spouse_instance)
+            if spouse_name not in Person.people:
+                continue
+
+            spouse = Person.people[spouse_name]
+            setattr(current, spouse_key, spouse)
 
     return person_instances
